@@ -1,0 +1,19 @@
+{
+  "name": "music-lufs-normalizer",
+  "version": "1.0.0",
+  "description": "Cross-platform CLI that normalizes a folder of music to a target LUFS. Bundles ffmpeg; lossless files are re-encoded, lossy files are ReplayGain-tagged.",
+  "bin": {
+    "music-normalize": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.DS_Store
+
+# Personal media used for local testing
+test_music/
+
+# Vendored AI-tooling installs (regenerated per machine)
+.claude/
+.agents/
+.opencode/
+_bmad/
