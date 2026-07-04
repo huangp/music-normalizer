@@ -27,6 +27,31 @@ Optionally expose the `music-normalize` command globally:
 npm link
 ```
 
+## Windows executable
+
+A standalone Windows build is produced by GitHub Actions so end users need
+neither Node.js nor ffmpeg installed.
+
+- **Download:** grab `music-normalize-win-x64.zip` from the latest GitHub Release
+  (created on any `v*` tag) or from the run artifacts of the **Build Windows**
+  workflow.
+- **Run:** unzip and keep all three files together —
+  `music-normalize.exe`, `ffmpeg.exe`, `ffprobe.exe`. The exe looks for
+  `ffmpeg.exe`/`ffprobe.exe` in its own folder, so they must stay side by side.
+
+  ```powershell
+  music-normalize.exe "C:\path\to\music" --dry-run
+  music-normalize.exe "C:\path\to\music"
+  ```
+
+The exe is built with [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg). Because
+`ffmpeg-static`/`ffprobe-static` only fetch the current OS's binary at install
+time, the build runs on a `windows-latest` runner so the bundled ffmpeg/ffprobe
+are the correct Windows binaries. To trigger a build, push a tag
+(`git tag v0.1.0 && git push --tags`) or run the workflow manually from the
+GitHub **Actions** tab. `npm run build:win` builds only the exe locally (it does
+not stage the ffmpeg/ffprobe binaries — the workflow does that).
+
 ## Usage
 
 ```bash

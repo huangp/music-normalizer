@@ -1,8 +1,20 @@
 'use strict';
 
+const path = require('path');
 const { spawn } = require('child_process');
-const ffmpegPath = require('ffmpeg-static');
-const ffprobePath = require('ffprobe-static').path;
+
+// When packaged with pkg (process.pkg is set), ffmpeg/ffprobe are shipped as
+// loose files next to the executable (a binary can't be exec'd from pkg's
+// virtual FS). In dev, use the ffmpeg-static / ffprobe-static package paths.
+function resolveBinary(name, devPath) {
+  if (process.pkg) {
+    const exe = process.platform === 'win32' ? `${name}.exe` : name;
+    return path.join(path.dirname(process.execPath), exe);
+  }
+  return devPath;
+}
+const ffmpegPath = resolveBinary('ffmpeg', require('ffmpeg-static'));
+const ffprobePath = resolveBinary('ffprobe', require('ffprobe-static').path);
 
 // --- Pure helpers (unit-tested without spawning ffmpeg) ---------------------
 
