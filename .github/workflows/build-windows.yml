@@ -9,9 +9,9 @@ jobs:
   build-win:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -31,7 +31,7 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/* -DestinationPath music-normalize-win-x64.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: music-normalize-win-x64
           path: music-normalize-win-x64.zip
