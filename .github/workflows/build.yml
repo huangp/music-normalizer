@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: node22-win-x64
+            ext: '.exe'
+            archive: music-normalize-win-x64.zip
+          - os: ubuntu-latest
+            target: node22-linux-x64
+            ext: ''
+            archive: music-normalize-linux-x64.tar.gz
+          - os: macos-latest
+            target: node22-macos-arm64
+            ext: ''
+            archive: music-normalize-macos-arm64.tar.gz
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Build with pkg
+        run: npx pkg . --targets ${{ matrix.target }} --output dist/music-normalize${{ matrix.ext }}
+
+      - name: Stage loose ffmpeg/ffprobe binaries
+        shell: bash
+        run: |
+          cp "$(node -e "console.log(require('ffmpeg-static'))")" "dist/ffmpeg${{ matrix.ext }}"
+          cp "$(node -e "console.log(require('ffprobe-static').path)")" "dist/ffprobe${{ matrix.ext }}"
+          if [ "${{ runner.os }}" != "Windows" ]; then chmod +x dist/*; fi
+
+      - name: Zip artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/* -DestinationPath ${{ matrix.archive }}
+
+      - name: Tar artifact (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: tar -czf ${{ matrix.archive }} -C dist .
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.archive }}
+          path: ${{ matrix.archive }}
+
+      - name: Attach to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.archive }}
