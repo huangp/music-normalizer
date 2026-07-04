@@ -129,6 +129,36 @@ async function writeTag(inputPath, outputPath, gain, peak) {
   ]);
 }
 
+// Read the file's container-level artist/title/album tags. Tag keys vary in
+// case across formats (ID3 vs Vorbis), so match case-insensitively; a missing
+// tag yields an empty string.
+async function readTags(inputPath) {
+  const { stdout } = await run(ffprobePath, [
+    '-v', 'error',
+    '-show_entries', 'format_tags',
+    '-of', 'json', inputPath,
+  ]);
+  const tags = (JSON.parse(stdout).format || {}).tags || {};
+  const lower = {};
+  for (const [key, value] of Object.entries(tags)) lower[key.toLowerCase()] = value;
+  return {
+    artist: lower.artist || '',
+    title: lower.title || '',
+    album: lower.album || '',
+  };
+}
+
+// Write artist/title/album via stream copy (audio bytes untouched). Only
+// non-empty fields are written, so an empty value never blanks an existing tag.
+async function writeTags(inputPath, outputPath, tags) {
+  const args = ['-hide_banner', '-nostats', '-i', inputPath, '-map', '0', '-c', 'copy'];
+  for (const key of ['title', 'artist', 'album']) {
+    if (tags[key]) args.push('-metadata', `${key}=${tags[key]}`);
+  }
+  args.push('-y', outputPath);
+  await run(ffmpegPath, args);
+}
+
 module.exports = {
   parseLoudnormJson,
   computeGain,
@@ -137,4 +167,6 @@ module.exports = {
   probeAudio,
   reencode,
   writeTag,
+  readTags,
+  writeTags,
 };
