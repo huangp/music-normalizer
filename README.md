@@ -79,6 +79,51 @@ If installed via `npm link`, replace `node src/cli.js` with `music-normalize`.
 | `-o, --output <dir>` | — | Write copies here instead of editing in place (must be outside the input folder) |
 | `--dry-run` | `false` | Analyze and report without writing any files |
 
+## Cleaning up tags & filenames (LLM round-trip)
+
+Music files often have messy names and missing or wrong tags. Two subcommands
+let you fix them with help from any LLM — the tool never calls an LLM itself.
+
+```bash
+# 1. Export current tags to a JSON manifest
+node src/cli.js export-tags /path/to/music -o music-tags.json
+
+# 2. Paste music-tags.json into your LLM. It fills in artist/title/album and a
+#    "newName" for each file; paste the result back over the file.
+
+# 3. Preview, then apply — writes tags and renames files
+node src/cli.js apply-tags music-tags.json --dry-run
+node src/cli.js apply-tags music-tags.json
+```
+
+The manifest is a `{ instructions, files }` object. Each file entry keeps its
+original filename (`origName`) and absolute `path` — **don't edit those** — plus
+the current `artist`/`title`/`album` and an empty `newName`:
+
+```json
+{
+  "instructions": "… same title may be a DIFFERENT artist (cover/live) — never merge …",
+  "files": [
+    { "origName": "富士山下 (128kbps).mp3", "path": "/music/富士山下 (128kbps).mp3",
+      "artist": "", "title": "陳奕迅 - 富士山下", "album": "", "newName": "" }
+  ]
+}
+```
+
+- **Non-destructive:** tags are written via stream copy — audio is never re-encoded.
+- **Safe renames:** `newName` is sanitized (illegal characters replaced, the file
+  stays in its own folder) and the **original extension is always kept**.
+- **Only non-empty fields are written**, so a blank field never wipes an existing tag.
+- **Never clobbers** a different existing file; each file is handled independently,
+  and the command exits non-zero if any entry failed.
+- The `instructions` block tells the LLM the same title can be a *different* artist
+  (cover or live version) and must not be merged — apply ignores it.
+
+| Command | Flag | Default | Description |
+|---|---|---|---|
+| `export-tags <folder>` | `-o, --out <file>` | `music-tags.json` | Where to write the manifest |
+| `apply-tags <manifest>` | `--dry-run` | `false` | Show planned changes without writing |
+
 ## Behavior notes
 
 - **In-place is atomic** — each file is written to a temp file and renamed only on
